@@ -43,6 +43,13 @@ $(function(){
 		leftImage = $("#leftImage"),
 		noMessagesImage = $("#noMessagesImage");
 
+	// ajax functions to connect to the API
+	var api = 'http://localhost:3000/';
+	function saveMessage(ticket, user, message) {
+		$.post(api + 'messages/create', {'message': {'ticket_id': ticket, 'user_id': user, 'content': message, 'source': 'chat'}}, function(data) {
+			console.log(data);
+		});
+	}
 
 	// on connection to server get the id of person's room
 	socket.on('connect', function(){
@@ -199,6 +206,10 @@ $(function(){
 			scrollToBottom();
 
 			// Send the message to the other person in the chat
+			console.log('textarea.val(): ' + textarea.val());
+			console.log('user: ' + name);
+			console.log('img: ' + img);
+			saveMessage(id, name, textarea.val());
 			socket.emit('msg', {msg: textarea.val(), user: name, img: img});
 
 		}
