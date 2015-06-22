@@ -68,7 +68,7 @@ $(function(){
 	}
 
 	function authenticateUser(ticket, email, auth) {
-		return $.ajax({
+		data = $.ajax({
 			url: api + 'chat/auth.json',
 			async: false,
 			data: {
@@ -76,14 +76,14 @@ $(function(){
 				auth: auth,
 				email: email
 			},
-			method: 'post',
-			complete: function(data) {
-				response = $.parseJSON(data.responseText);
-				response.status = data.status;
-				response.statusText = $.trim(data.statusText);
-				return response;
-			}
+			method: 'post'
 		});
+
+		response = $.parseJSON(data.responseText);
+		response.status = data.status;
+		response.statusText = $.trim(data.statusText);
+
+		return response;
 	}
 
 	// on connection to server get the id of person's room
@@ -267,7 +267,7 @@ $(function(){
 			console.log('user: ' + name);
 			console.log('img: ' + img);
 
-			saveMessage(id, null, textarea.val());
+			saveMessage(id, authenticatedUser.id, textarea.val());
 			socket.emit('msg', {msg: textarea.val(), user: name, img: img});
 
 		}
