@@ -13,6 +13,7 @@ $(function(){
 		email = "",
 		img = "",
 		friend = "";
+		authenticatedUser = {};
 
 	// cache some jQuery objects
 	var section = $(".section"),
@@ -43,12 +44,46 @@ $(function(){
 		leftImage = $("#leftImage"),
 		noMessagesImage = $("#noMessagesImage");
 
+	// ##
 	// ajax functions to connect to the API
 	var api = 'http://localhost:3000/';
 	function saveMessage(ticket, user, message) {
-		$.post(api + 'messages/create', {'message': {'ticket_id': ticket, 'user_id': user, 'content': message, 'source': 'chat'}}, function(data) {
-			console.log(data);
+		// this didn't have .json — careful
+		// message object is sent to the message controller
+		$.post(api + 'messages/create.json',
+			{
+				'message': {
+					'ticket_id': ticket,
+					'user_id': user,
+					'content': message,
+					'source': 'chat'
+				}
+			}, 
+
+			// successful
+			function(data) {
+				console.log(data);
+				return true;
+			});
+	}
+
+	function authenticateUser(ticket, email, auth) {
+		data = $.ajax({
+			url: api + 'chat/auth.json',
+			async: false,
+			data: {
+				id: ticket,
+				auth: auth,
+				email: email
+			},
+			method: 'post'
 		});
+
+		response = $.parseJSON(data.responseText);
+		response.status = data.status;
+		response.statusText = $.trim(data.statusText);
+
+		return response;
 	}
 
 	// on connection to server get the id of person's room
@@ -86,13 +121,22 @@ $(function(){
 					alert("Please enter a valid email!");
 				}
 				else {
+					// ##
+					// make sure that the user that was now validated actually exists
+					// and it is part of the ticket that was requested
+					auth = $.trim($('#yourAuth').val());
+					authenticatedUser = authenticateUser(id, email, auth);
 
-					showMessage("inviteSomebody");
-
-					// call the server-side function 'login' and send user's parameters
-					socket.emit('login', {user: name, avatar: email, id: id});
+					// it may be possible that passing authenticatedUser is needed
+					if (authenticatedUser.status === 200) {
+						// call the server-side function 'login' and send user's parameters
+						showMessage("inviteSomebody");
+						socket.emit('login', {user: name, avatar: email, id: id});
+					} else {
+						authenticatedUser = undefined;
+						alert('Incorrect email or authentication code for this chat.');
+					}
 				}
-			
 			});
 		}
 
@@ -121,7 +165,20 @@ $(function(){
 					alert("Wrong e-mail format!");
 				}
 				else {
-					socket.emit('login', {user: name, avatar: email, id: id});
+					// ##
+					// make sure that the user that was now validated actually exists
+					// and it is part of the ticket that was requested
+					auth = $.trim($('#hisAuth').val());
+					authenticatedUser = authenticateUser(id, email, auth);
+
+					// it may be possible that passing authenticatedUser is needed
+					if (authenticatedUser.status === 200) {
+						// call the server-side function 'login' and send user's parameters
+						socket.emit('login', {user: name, avatar: email, id: id});
+					} else {
+						authenticatedUser = undefined;
+						alert('Incorrect email or authentication code for this chat.');
+					}
 				}
 
 			});
@@ -209,7 +266,8 @@ $(function(){
 			console.log('textarea.val(): ' + textarea.val());
 			console.log('user: ' + name);
 			console.log('img: ' + img);
-			saveMessage(id, name, textarea.val());
+
+			saveMessage(id, authenticatedUser.id, textarea.val());
 			socket.emit('msg', {msg: textarea.val(), user: name, img: img});
 
 		}

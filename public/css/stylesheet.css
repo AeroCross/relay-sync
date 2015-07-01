@@ -190,7 +190,7 @@ body {
 	overflow: hidden;
 }
 
-#yourEmail {
+#yourEmail, #yourAuth, #hisAuth {
 	float:left;
 	padding-left: 10px;
 	width: 200px;
