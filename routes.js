@@ -6,7 +6,7 @@
 
 var gravatar = require('gravatar');
 
-// Export a function, so that we can pass 
+// Export a function, so that we can pass
 // the app and io instances from the app.js file:
 
 module.exports = function(app,io){
@@ -26,16 +26,16 @@ module.exports = function(app,io){
 	// 	res.redirect('/chat/'+id);
 	// });
 
+	// for direct requests
 	app.get('/chat/:id', function(req,res){
-
-		// Render the chant.html view
+		// Render the chat.html view
 		res.render('chat');
 	});
 
 	// Initialize a new socket.io application, named 'chat'
 	var chat = io.on('connection', function (socket) {
 
-		// When the client emits the 'load' event, reply with the 
+		// When the client emits the 'load' event, reply with the
 		// number of people in this chat room
 
 		socket.on('load',function(data){
@@ -155,5 +155,3 @@ function findClientsSocket(io,roomId, namespace) {
 	}
 	return res;
 }
-
-
