@@ -7,7 +7,7 @@ $(function(){
 
 	// connect to the socket
 	var socket = io();
-	
+
 	// variables which hold the data for each person
 	var name = "",
 		email = "",
@@ -32,6 +32,7 @@ $(function(){
 		loginForm = $(".loginForm"),
 		yourName = $("#yourName"),
 		yourEmail = $("#yourEmail"),
+		yourAuth = $("#yourAuth"), // ##
 		hisName = $("#hisName"),
 		hisEmail = $("#hisEmail"),
 		chatForm = $("#chatform"),
@@ -58,7 +59,7 @@ $(function(){
 					'content': message,
 					'source': 'chat'
 				}
-			}, 
+			},
 
 			// successful
 			function(data) {
@@ -86,6 +87,22 @@ $(function(){
 		return response;
 	}
 
+	// ##
+	// search the query string for additional needed parameters
+	var matched_email = window.location.search.match(/\?email\=[A-Za-z\.\-0-9\@]+/);
+	var matched_auth = window.location.search.match(/\&auth\=[A-Za-z0-9]+/);
+
+	if(matched_auth != null && matched_email != null) {
+		// get the email from the query params
+		matched_email = matched_email[0].split('=')[1];
+		// and the authentication code
+		matched_auth = matched_auth[0].split('=')[1];
+
+		yourEmail.val(matched_email);
+		yourAuth.val(matched_auth);
+		yourName.focus();
+	}
+
 	// on connection to server get the id of person's room
 	socket.on('connect', function(){
 
@@ -109,7 +126,7 @@ $(function(){
 				e.preventDefault();
 
 				name = $.trim(yourName.val());
-				
+
 				if(name.length < 1){
 					alert("Please enter a nick name longer than 1 character!");
 					return;
@@ -190,7 +207,7 @@ $(function(){
 
 	});
 
-	// Other useful 
+	// Other useful
 
 	socket.on('startChat', function(data){
 		console.log(data);
