@@ -7,12 +7,13 @@ $(function(){
 
 	// connect to the socket
 	var socket = io();
-	
+
 	// variables which hold the data for each person
 	var name = "",
 		email = "",
 		img = "",
 		friend = "";
+		authenticatedUser = {};
 
 	// cache some jQuery objects
 	var section = $(".section"),
@@ -31,6 +32,7 @@ $(function(){
 		loginForm = $(".loginForm"),
 		yourName = $("#yourName"),
 		yourEmail = $("#yourEmail"),
+		yourAuth = $("#yourAuth"), // ##
 		hisName = $("#hisName"),
 		hisEmail = $("#hisEmail"),
 		chatForm = $("#chatform"),
@@ -43,6 +45,63 @@ $(function(){
 		leftImage = $("#leftImage"),
 		noMessagesImage = $("#noMessagesImage");
 
+	// ##
+	// ajax functions to connect to the API
+	var api = 'http://localhost:3000/';
+	function saveMessage(ticket, user, message) {
+		// this didn't have .json — careful
+		// message object is sent to the message controller
+		$.post(api + 'messages/create.json',
+			{
+				'message': {
+					'ticket_id': ticket,
+					'user_id': user,
+					'content': message,
+					'source': 'chat'
+				}
+			},
+
+			// successful
+			function(data) {
+				console.log(data);
+				return true;
+			});
+	}
+
+	function authenticateUser(ticket, email, auth) {
+		data = $.ajax({
+			url: api + 'chat/auth.json',
+			async: false,
+			data: {
+				id: ticket,
+				auth: auth,
+				email: email
+			},
+			method: 'post'
+		});
+
+		response = $.parseJSON(data.responseText);
+		response.status = data.status;
+		response.statusText = $.trim(data.statusText);
+
+		return response;
+	}
+
+	// ##
+	// search the query string for additional needed parameters
+	var matched_email = window.location.search.match(/\?email\=[A-Za-z\.\-0-9\@]+/);
+	var matched_auth = window.location.search.match(/\&auth\=[A-Za-z0-9]+/);
+
+	if(matched_auth != null && matched_email != null) {
+		// get the email from the query params
+		matched_email = matched_email[0].split('=')[1];
+		// and the authentication code
+		matched_auth = matched_auth[0].split('=')[1];
+
+		yourEmail.val(matched_email);
+		yourAuth.val(matched_auth);
+		yourName.focus();
+	}
 
 	// on connection to server get the id of person's room
 	socket.on('connect', function(){
@@ -67,7 +126,7 @@ $(function(){
 				e.preventDefault();
 
 				name = $.trim(yourName.val());
-				
+
 				if(name.length < 1){
 					alert("Please enter a nick name longer than 1 character!");
 					return;
@@ -79,13 +138,22 @@ $(function(){
 					alert("Please enter a valid email!");
 				}
 				else {
+					// ##
+					// make sure that the user that was now validated actually exists
+					// and it is part of the ticket that was requested
+					auth = $.trim($('#yourAuth').val());
+					authenticatedUser = authenticateUser(id, email, auth);
 
-					showMessage("inviteSomebody");
-
-					// call the server-side function 'login' and send user's parameters
-					socket.emit('login', {user: name, avatar: email, id: id});
+					// it may be possible that passing authenticatedUser is needed
+					if (authenticatedUser.status === 200) {
+						// call the server-side function 'login' and send user's parameters
+						showMessage("inviteSomebody");
+						socket.emit('login', {user: name, avatar: email, id: id});
+					} else {
+						authenticatedUser = undefined;
+						alert('Incorrect email or authentication code for this chat.');
+					}
 				}
-			
 			});
 		}
 
@@ -114,7 +182,20 @@ $(function(){
 					alert("Wrong e-mail format!");
 				}
 				else {
-					socket.emit('login', {user: name, avatar: email, id: id});
+					// ##
+					// make sure that the user that was now validated actually exists
+					// and it is part of the ticket that was requested
+					auth = $.trim($('#hisAuth').val());
+					authenticatedUser = authenticateUser(id, email, auth);
+
+					// it may be possible that passing authenticatedUser is needed
+					if (authenticatedUser.status === 200) {
+						// call the server-side function 'login' and send user's parameters
+						socket.emit('login', {user: name, avatar: email, id: id});
+					} else {
+						authenticatedUser = undefined;
+						alert('Incorrect email or authentication code for this chat.');
+					}
 				}
 
 			});
@@ -126,7 +207,7 @@ $(function(){
 
 	});
 
-	// Other useful 
+	// Other useful
 
 	socket.on('startChat', function(data){
 		console.log(data);
@@ -199,6 +280,11 @@ $(function(){
 			scrollToBottom();
 
 			// Send the message to the other person in the chat
+			console.log('textarea.val(): ' + textarea.val());
+			console.log('user: ' + name);
+			console.log('img: ' + img);
+
+			saveMessage(id, authenticatedUser.id, textarea.val());
 			socket.emit('msg', {msg: textarea.val(), user: name, img: img});
 
 		}
