@@ -92,16 +92,18 @@ $(function(){
 	var matched_email = window.location.search.match(/\?email\=[A-Za-z\.\-0-9\@]+/);
 	var matched_auth = window.location.search.match(/\&auth\=[A-Za-z0-9]+/);
 
-	if(matched_auth != null && matched_email != null) {
-		// get the email from the query params
-		matched_email = matched_email[0].split('=')[1];
-		// and the authentication code
-		matched_auth = matched_auth[0].split('=')[1];
+	$(document).ready(function() {
+		if(matched_auth != null && matched_email != null) {
+			// get the email from the query params
+			matched_email = matched_email[0].split('=')[1];
+			// and the authentication code
+			matched_auth = matched_auth[0].split('=')[1];
 
-		yourEmail.val(matched_email);
-		yourAuth.val(matched_auth);
-		yourName.focus();
-	}
+			yourEmail.val(matched_email);
+			yourAuth.val(matched_auth);
+			yourName.focus();
+		}
+	})
 
 	// on connection to server get the id of person's room
 	socket.on('connect', function(){
