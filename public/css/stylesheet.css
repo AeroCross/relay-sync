@@ -643,3 +643,7 @@ footer {
 	margin: 0 auto 200px;
 	overflow:hidden;
 }
+
+.hidden {
+	display: none;
+}
