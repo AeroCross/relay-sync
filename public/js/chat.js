@@ -93,6 +93,19 @@ $(function(){
 	var matched_auth = window.location.search.match(/\&auth\=[A-Za-z0-9]+/);
 
 	$(document).ready(function() {
+		// ready up sounds
+		ion.sound({
+		    sounds: [
+		        {
+		            name: "notification",
+		        }
+		    ],
+		    volume: 0.9,
+		    path: "../js/sounds/",
+		    preload: true
+		});
+
+		// and the query strings
 		if(matched_auth != null && matched_email != null) {
 			// get the email from the query params
 			matched_email = matched_email[0].split('=')[1];
@@ -218,11 +231,12 @@ $(function(){
 			chats.empty();
 
 			if(name === data.users[0]) {
-
+				// play this for the person that's waiting for someone to log in
+				ion.sound.play('notification');
+				alert('It\'s your turn!');
 				showMessage("youStartedChatWithNoMessages",data);
 			}
 			else {
-
 				showMessage("heStartedChatWithNoMessages",data);
 			}
 
